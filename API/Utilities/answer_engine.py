@@ -508,7 +508,15 @@ def answer(query: str, task_name: str = "", task_desc: str = "") -> str:
 def title(query: str) -> str:
     q = query.strip()
     if re.match(r"^(how|why|when|where|which|who)\b", q, flags=re.IGNORECASE):
-        words = re.findall(r"[A-Za-z0-9']+", q)[:6]
+        words = re.findall(r"[A-Za-z0-9']+", q)[:7]
     else:
         words = re.findall(r"[A-Za-z0-9']+", _topic(q))[:6]
+        # Cut before a relative clause: "Traveler named Hongo who visits…" → "Traveler named Hongo"
+        for k, w in enumerate(words):
+            if k >= 2 and w.lower() in ("who", "that", "which", "where"):
+                words = words[:k]
+                break
+    # Don't end a title on a dangling word ("… who visits an")
+    while len(words) > 2 and words[-1].lower() in _STOP | {"who", "that", "which", "while", "will", "did"}:
+        words.pop()
     return _cap(" ".join(words)) if words else "New conversation"

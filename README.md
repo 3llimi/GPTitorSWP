@@ -1,175 +1,168 @@
-# **GPTitor**
+# GPTitor
 
-## Description
-GPTitor is an interactive sandbox that helps users learn to write effective prompts for Large Language Models (LLMs). Users can select tasks, write prompts, and receive feedback and grades from different LLMs to improve their skills.
+**Learn to write better prompts by practising them.**
+GPTitor is a prompt-writing sandbox: pick a task, write a prompt, and get an answer together with a score and concrete feedback on how to improve the prompt.
 
-## Demo
-The following GIF shows the key idea of GPTитор in practice:
-<img src="https://gitlab.pg.innopolis.university/a.nasibullina/gptitor/-/raw/main/Media/Demo.gif" height="400">
-
-## How to Use
-1. Open the [GPTitor](http://10.100.30.244:8801/gptitor/chatpage) web application.
-2. Choose a task from the list provided.
-3. Write a prompt for the task and submit it.
-4. Review the feedback and grading based on the prompt evaluation criteria.
-5. Adjust the prompt based on feedback and resubmit to see improvements.
-6. Switch between different LLMs to practice and compare responses.
+<p align="center">
+  <img src="Media/features/practice.gif" alt="Picking a task, writing a prompt and getting an answer with a score and feedback" width="100%">
+</p>
 
 ## Features
-- Interactive chatbot interface.
-- Task selection for targeted prompt writing practice.
-- Prompt grading based on specific evaluation criteria.
-- Feedback on areas for improvement.
-- Option to switch between different LLMs for diverse practice.
 
-## Project Installation / Deployment
-### Prerequisites
-- Node.js and npm installed.
-- Python 3.9 installed.
+### Practise with graded tasks
+Browse 40 tasks across 10 categories (maths, creative writing, work, health, travel and more). Start a task, write a prompt for it, and the answer appears together with your score.
 
-### Installation
-1. Clone the repository:
-    ```bash
-    git clone https://gitlab.pg.innopolis.university/a.nasibullina/gptitor.git
-    cd gptitor
-    ```
-2. Install frontend dependencies:
-    ```bash
-    cd React
-    npm install
-    ```
-3. Install backend dependencies:
-    ```bash
-    cd ../API
-    pip install -r requirements.txt
-    ```
+### Feedback on every prompt
+Every prompt is scored out of 5 on four criteria. Each criterion shows what you did well or what to fix, and the written feedback ends with a suggested rewrite of your prompt.
 
-### Deployment
-1. Start the frontend application:
-    ```bash
-    cd React
-    npm start
-    ```
-2. Run the backend API using uvicorn:
-    ```bash
-    cd ../API
-    uvicorn Core.main:app --reload
-    ```
- 
-### Note on Deployment
-- The service is currently available only within the Innopolis network. 
-- If you wish to deploy the service elsewhere, ensure to update links in the React [config.ts](React/src/config.ts) file and API requests accordingly.
-- You may access the API documentation (Swagger UI) at http://127.0.0.1:8000/docs in your web browser after the deployment.
-- The public API documentation (Swagger UI) is available [here](http://10.100.30.244:1330/docs).
-- LLMs are hosted on remote servers; the API interacts with these servers.
+| Criterion | What it checks |
+|---|---|
+| **Conciseness & Focus** | One clear request, at a sensible length |
+| **Clarity & Specificity** | A clear action and concrete wording, no vague terms |
+| **Relevance & Context** | Who the answer is for, why you need it, and the task's key facts |
+| **Purpose & Output** | The expected format: a list, a table, a word limit… |
 
+### Stop a prompt at any time
+Press **Stop** or **Esc** while an answer is on its way. Your prompt comes back into the box so you can edit it, and nothing is saved.
 
-## Frameworks and Technology
-- **Frontend**: React, CSS, TypeScript
-- **Build Tool**: Vite
-- **Backend**: FastAPI
-- **Database**: SQLite
-- **Deployment**: npm, Uvicorn
+<p align="center">
+  <img src="Media/features/stop.gif" alt="Sending a prompt and stopping it; the prompt returns to the input box" width="100%">
+</p>
 
-## Using Docker Compose [For Customers]
+### Your conversation history
+Conversations are grouped by date and titled automatically. You can search them, star the ones you want to keep, and rename them.
 
-To simplify the development and deployment of your application, you can use Docker Compose. Below are the instructions on how to set up and run your application using Docker Compose.
+<p align="center">
+  <img src="Media/features/history.gif" alt="Searching, starring and renaming conversations in the sidebar" width="100%">
+</p>
 
-### Prerequisites
+### Track your progress
+The **Progress** page shows how many prompts you've sent, your activity over the last 7 or 30 days, and your average score per criterion, plus which skill to focus on next.
 
-Make sure you have Docker and Docker Compose installed on your machine. You can download them from the [official Docker website](https://www.docker.com/).
+<p align="center">
+  <img src="Media/features/progress.gif" alt="Progress page with activity chart and per-skill scores" width="100%">
+</p>
 
-### Docker Compose Setup
+### Light and dark themes
+Switch between light, dark or your system setting from the header.
 
-1. **Clone the Repository**
+<p align="center">
+  <img src="Media/features/theme.gif" alt="Switching between light and dark theme" width="100%">
+</p>
 
-   ```sh
-   git clone https://gitlab.pg.innopolis.university/a.nasibullina/gptitor.git
-   cd gptitor
-   ```
+### Works on phones
+On small screens the history opens as a drawer, and you switch between the chat and the tasks & feedback panel.
 
-2. **Build and Run Containers**
+<p align="center">
+  <img src="Media/features/mobile.gif" alt="GPTitor on a phone: drawer, chat and feedback panel" width="300">
+</p>
 
-   Navigate to the root directory of your project where `docker-compose.yml` is located and run the following command:
+There's also a guided tour (**Take the tour** in the header) and short guides on prompting techniques in the **Guides** tab.
 
-   ```sh
-   docker-compose up --build
-   ```
+## How the answers work
 
-   This command will build the Docker images for the backend and frontend services and start the containers.
+Answers and grades come from GPTitor's built-in answer engine ([`API/Utilities/answer_engine.py`](API/Utilities/answer_engine.py)), so no external AI service or API key is needed.
 
-3. **Access the Application**
+- **Answers** follow what the prompt asks for: a story, an email, a table, bullet points, a plan, a comparison or code.
+- **Grading** reads the prompt itself. It checks for a role, context, an audience, an output format, constraints, vague wording and length, and for task prompts, whether the task's key facts are included.
 
-   - The backend will be accessible at `http://localhost:8000`
-   - The frontend will be accessible at `http://localhost:5173`
+A better prompt really does get a better score.
 
-4. **Stopping the Containers**
-
-   To stop the containers, press `CTRL+C` in the terminal where `docker-compose up` is running or use the following command:
-  
-   ```sh
-   docker-compose down
-   ```
-
-## Setting Up GitLab CI/CD Pipeline
-
-To automate the build, test, and deployment process, you can use [GitLab CI/CD](https://docs.gitlab.com/ee/ci/). The following guidance is applicaple only for the Innopolis University community. Below are the instructions to set up the GitLab CI/CD pipeline.
+## Getting started
 
 ### Prerequisites
+- **Node.js** 18 or newer
+- **Python** 3.9 or newer
 
-- Ensure you have access to the Innopolis University GitLab instance.
-- Make sure you have the necessary credentials to work in Innopolis University DevOps Playground.
+### 1. Clone the repository
+```bash
+git clone https://github.com/3llimi/GPTitorSWP.git
+cd GPTitorSWP
+```
 
-### Configuration
+### 2. Start the backend (FastAPI)
+```bash
+cd API
+python -m venv .venv
+# Windows:      .venv\Scripts\activate
+# macOS/Linux:  source .venv/bin/activate
+pip install fastapi==0.111.0 uvicorn==0.30.1 SQLAlchemy==2.0.31 SQLAlchemy-Utils==0.41.2 sqlalchemy-json==0.4.0 aiohttp==3.9.5 pydantic==2.7.4
+uvicorn Core.main:app --reload
+```
+The API runs on http://127.0.0.1:8000, with interactive docs at http://127.0.0.1:8000/docs. The SQLite database (`gptitor.db`) is created and filled with tasks on first start.
 
-The CI/CD pipeline configuration is specified in the [`.gitlab-ci.yml`](.gitlab-ci.yml) file. This configuration includes the following stages:
+> These are the packages the app needs to run. `requirements.txt` also lists development and testing tools. Some of them are large (`torch`, `transformers`), and `uvloop` doesn't install on Windows.
 
-   - **Build Stage:** Builds the Docker images for the backend and frontend services.
-   - **Lint Stage:** Runs linting tools ESLint and Flake8 for the frontend and backend code.
-   - **Test Stage:** Runs tests for the frontend and backend code using Jest and Pytest respectively.
-   - **Deploy Stage:** Contains commands for deploying the application. You need to customize this according to the deployment strategy (e.g., deploying to a cloud provider, Kubernetes, etc.).
+### 3. Start the frontend (React + Vite)
+In a second terminal:
+```bash
+cd React
+npm install
+npm run dev
+```
+Open http://localhost:5173/gptitor/.
 
-### Running the Pipeline
+The frontend talks to the API address set in [`React/src/config.ts`](React/src/config.ts) (`http://127.0.0.1:8000` by default).
 
-To start the CI pipeline, refer to the tutorial shared in the Innopolis University GitLab repository [here](https://gitlab.pg.innopolis.university/n.askarbekuly/demo_docker_ci_cd/-/blob/master/README.md).
+### Docker Compose (alternative)
+With Docker installed, run this from the repository root:
+```bash
+docker-compose up --build
+```
+The backend is exposed on port 8000 and the frontend on port 5173. Stop it with `docker-compose down`.
 
-### Additional Notes
+## Running the tests
+```bash
+# Frontend (Jest + Testing Library)
+cd React
+npm test
 
-- Ensure all required environment variables are set correctly in your GitLab CI/CD settings.
-- This pipeline is configured to work specifically for the Innopolis University environment.
+# Backend (pytest), with the test tools installed
+cd API
+pip install pytest pytest-asyncio pytest-mock pytest-cov pytest-json httpx
+pytest
+```
 
-## Detailed Documentation [For Customers]
+## Project structure
+```
+API/                FastAPI backend
+  Core/             app, database models, schemas, data access
+  Routers/          REST endpoints (conversations, messages, feedback, tasks, profile…)
+  Utilities/        answer engine, title generation, database seeding
+  Data/             tasks and categories loaded on first start
+React/              React + TypeScript frontend (Vite)
+  src/              components, styles (design tokens in index.css), hooks
+Media/features/     GIFs used in this README
+```
 
-For more comprehensive details on the API, DB, and React components structure, please refer to the following documents:
+## Technology
+- **Frontend:** React 18, TypeScript, Vite, Chart.js, react-markdown (with KaTeX for maths), react-joyride
+- **Backend:** FastAPI, SQLAlchemy, SQLite, Uvicorn
+- **Testing:** Jest and Testing Library (frontend), pytest (backend)
 
-- [API Documentation](API/README.md): This document provides detailed information about the API endpoints, data formats, database structure, and usage instructions.
+## CI/CD (Innopolis University GitLab)
 
-- [React Components Documentation](React/README.md): Here you can find comprehensive descriptions for the React components implemented in this project.
+[`.gitlab-ci.yml`](.gitlab-ci.yml) defines the pipeline used on the Innopolis University GitLab:
 
-Alternatively, you can visit the [GitLab Wiki Home Page](https://gitlab.pg.innopolis.university/a.nasibullina/gptitor/-/wikis/home) created for simplified orientation through the detailed documentation.
- 
+- **Build:** builds the backend and frontend Docker images.
+- **Lint:** ESLint for the frontend, Flake8 for the backend.
+- **Test:** Jest and pytest.
+- **Deploy:** deployment commands, to be adapted to your environment.
+
+It's set up for the university's DevOps Playground. See the [CI/CD tutorial](https://gitlab.pg.innopolis.university/n.askarbekuly/demo_docker_ci_cd/-/blob/master/README.md) there for details.
+
+## More documentation
+- [API documentation](API/README.md): endpoints, data formats and the database structure
+- [React components documentation](React/README.md)
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## Contact Information
-For any questions, issues, or contributions, you can reach out to the developers:
-- **Alexandra Starikova-Nasibullina**
-  - Email: [a.nasibullina@innopolis.university](mailto:a.nasibullina@innopolis.university)
-  - Telegram: [@lexandrinnn_t](https://t.me/lexandrinnn_t)
+## Contact
+GPTitor was built by a student team at Innopolis University:
 
-- **Makar Dyachenko**
-  - Email: [m.dyachenko@innopolis.university](mailto:m.dyachenko@innopolis.university)
-  - Telegram: [@index099](https://t.me/index099)
-
-- **Anas Hamrouni**
-  - Email: [a.hamrouni@innopolis.university](mailto:a.hamrouni@innopolis.university)
-  - Telegram: [@reachnasta](https://t.me/reachnasta)
-
-- **Ahmed Baha Eddine Alimi**
-  - Email: [a.alimi@innopolis.university](mailto:a.alimi@innopolis.university)
-  - Telegram: [@Allimi3](https://t.me/Allimi3)
-
-- **Ildar Rakiev**
-  - Email: [i.rakiev@innopolis.university](mailto:i.rakiev@innopolis.university)
-  - Telegram: [@mescudiway](https://t.me/mescudiway)
+- **Alexandra Starikova-Nasibullina**: [a.nasibullina@innopolis.university](mailto:a.nasibullina@innopolis.university) · Telegram [@lexandrinnn_t](https://t.me/lexandrinnn_t)
+- **Makar Dyachenko**: [m.dyachenko@innopolis.university](mailto:m.dyachenko@innopolis.university) · Telegram [@index099](https://t.me/index099)
+- **Anas Hamrouni**: [a.hamrouni@innopolis.university](mailto:a.hamrouni@innopolis.university) · Telegram [@reachnasta](https://t.me/reachnasta)
+- **Ahmed Baha Eddine Alimi**: [a.alimi@innopolis.university](mailto:a.alimi@innopolis.university) · Telegram [@Allimi3](https://t.me/Allimi3)
+- **Ildar Rakiev**: [i.rakiev@innopolis.university](mailto:i.rakiev@innopolis.university) · Telegram [@mescudiway](https://t.me/mescudiway)
