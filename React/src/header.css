@@ -1,76 +1,190 @@
-.NavContanaire {
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
     display: flex;
-    justify-content: space-between;
-    flex-direction: row;
     align-items: center;
-    width: 100vw;
-    height: 64px;
-    background-color: #FFFFFF;
+    gap: 24px;
+    height: var(--header-h);
+    padding: 0 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
 }
 
-.IULogo {
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.brand-logo {
+    display: grid;
+    transition: transform 0.35s var(--ease-spring);
+}
+
+.brand:hover .brand-logo {
+    transform: rotate(-8deg) scale(1.06);
+}
+
+.brand-name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+}
+
+.brand-tag {
+    padding-left: 10px;
+    border-left: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.main-nav {
+    display: flex;
+    gap: 4px;
+    height: 100%;
+}
+
+.nav-link {
     position: relative;
-    left: 28px;
-}
-
-.navcontent {
-    display: flex;
-    column-gap: 2.3vw;
-    
-
-}
-
-.choices{
     display: flex;
     align-items: center;
-    column-gap: 5px;
-    color: #3B4168;
+    gap: 8px;
+    padding: 0 12px;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--muted);
+    transition: color 0.15s;
 }
 
-.PProfile {
-    /* margin-right: 10px; */
-    position: relative;
-    width: auto;
+.nav-link:hover {
+    color: var(--ink);
+}
+
+.nav-link.active {
+    color: var(--primary);
+}
+
+.nav-link::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--primary);
+    transform: scaleX(0);
+    transition: transform 0.25s var(--ease);
+}
+
+.nav-link:hover::after {
+    transform: scaleX(0.4);
+    opacity: 0.4;
+}
+
+.nav-link.active::after {
+    transform: scaleX(1);
+    opacity: 1;
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--primary);
+}
+
+.header-actions {
+    margin-left: auto;
     display: flex;
     align-items: center;
-    column-gap: 40px;
+    gap: 8px;
 }
 
-.msgNotif {
-    width: 44px;
-    height: 44px;
-    background-color: #FFFFFF;
+.theme-icon {
+    display: grid;
+    animation: theme-spin 0.4s var(--ease-spring);
+}
+
+@keyframes theme-spin {
+    from { transform: rotate(-90deg) scale(0.5); opacity: 0; }
+}
+
+.icon-btn.menu-btn {
+    display: none;
+}
+
+.user-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 12px 0 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.user-chip:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-2);
+}
+
+.avatar {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3),
-        0 6px 20px rgba(0, 0, 0, 0.19);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
 }
 
-
-.ProfileBox {
-    position: relative;
-    right: 28px;
-    width: 145px;
-    height: 45px;
-    background-color: #FFFFFF;
-    border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    cursor: pointer;
-}
-.pdp {
-    width: 32px;
-    height: 32px;
-    background-color: black;
-    border-radius: 50%;
+.user-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-2);
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.ProfileBox > p {
-    color: #3B4168;
-    transition: color 0.8s ease;
+@media (max-width: 1100px) {
+    .brand-tag,
+    .tour-btn span {
+        display: none;
+    }
+    .btn.tour-btn {
+        padding: 0 10px;
+    }
+}
+
+@media (max-width: 720px) {
+    .app-header {
+        gap: 8px;
+        padding: 0 8px;
+        padding-left: max(8px, env(safe-area-inset-left));
+        padding-right: max(8px, env(safe-area-inset-right));
+    }
+    .icon-btn.menu-btn { display: inline-grid; }
+    .main-nav { gap: 0; }
+    .nav-link { padding: 0 10px; }
+    .nav-link span,
+    .user-name { display: none; }
+    .user-chip { padding: 0 3px; border: none; }
+    .header-actions { gap: 2px; }
+    .btn.tour-btn { width: 34px; padding: 0; }
+}
+
+@media (max-width: 400px) {
+    .brand-name { display: none; }
 }

@@ -39,3 +39,8 @@ dist-ssr
 gptitor.db
 
 
+
+# Python virtual environments and local test artifacts
+.venv/
+venv/
+API/test.db

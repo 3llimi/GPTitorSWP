@@ -1,24 +1,15 @@
-// NameContextProvider.js
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import { FeedbackContext } from './feedbackContext';
-import { Metrics } from './models/metrics';
-import { Task } from './models/task';
+import { emptyMetrics } from './criteria';
 
-// @ts-ignore
-const FeedbackContextProvider = ({ children }) => {
-  
+const FeedbackContextProvider = ({ children }: { children: ReactNode }) => {
   const [feedback, setFeedback] = useState('');
-  const [criteria, setCriteria ] = useState(new Metrics(0.0, "", 0.0, "", 0.0, "", 0.0, ""))
-  const [task, setTask] = useState(new Task(0, "", "", ""));
+  const [criteria, setCriteria] = useState(emptyMetrics);
   return (
-    <FeedbackContext.Provider value={{ feedback, setFeedback, 
-                                       criteria, setCriteria, 
-                                       task, setTask
-     }}>
+    <FeedbackContext.Provider value={{ feedback, setFeedback, criteria, setCriteria }}>
       {children}
     </FeedbackContext.Provider>
   );
-  
 };
 
 export default FeedbackContextProvider;

@@ -1,3 +1,8 @@
+import os
+
+# Tests mock the remote LLM calls, so use that code path instead of the built-in engine.
+os.environ["GPTITOR_REMOTE_LLM"] = "1"
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

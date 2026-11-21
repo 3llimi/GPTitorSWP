@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from Core import crud, schemas, database
 from typing import List
 from Authentication import auth
@@ -23,9 +23,11 @@ def get_all_messages_by_conversation_id(
              status_code=201)
 async def send_query(conversation_id: int,
                      query: schemas.Query,
+                     request: Request,
                      user_id: int = auth.get_current_user(),
                      db: Session = Depends(database.get_db)):
     return await crud.send_query(db=db,
                                  conversation_id=conversation_id,
                                  query=query,
-                                 user_id=user_id)
+                                 user_id=user_id,
+                                 is_cancelled=request.is_disconnected)

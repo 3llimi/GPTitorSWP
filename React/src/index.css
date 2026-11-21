@@ -1,101 +1,512 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap');
+
+/* ------------------------------------------------------------------
+   Design tokens — every colour in the app comes from this list.
+   ------------------------------------------------------------------ */
+:root {
+  /* Brand */
+  --primary: #2563EB;
+  --primary-hover: #1D4ED8;
+  --primary-soft: #EFF4FF;
+  --primary-border: #C7D7FE;
+  --on-primary: #FFFFFF;
+
+  /* Neutrals */
+  --ink: #0F172A;
+  --ink-2: #334155;
+  --muted: #64748B;
+  --subtle: #94A3B8;
+  --border: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --surface: #FFFFFF;
+  --surface-2: #F8FAFC;
+  --bg: #F1F5F9;
+
+  /* Status */
+  --success: #15803D;
+  --success-soft: #DCFCE7;
+  --warning: #B45309;
+  --warning-soft: #FEF3C7;
+  --danger: #DC2626;
+  --danger-soft: #FEE2E2;
+
+  /* Shape */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 30px rgba(15, 23, 42, 0.12);
+
+  /* Type */
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Montserrat", var(--font-body);
+  --font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  /* Fixed-dark surfaces (code blocks, tooltips, toasts) */
+  --code-bg: #0F172A;
+  --code-fg: #E2E8F0;
+  --tip-bg: #0F172A;
+  --tip-fg: #F8FAFC;
+  --overlay: rgba(15, 23, 42, 0.45);
+  --primary-glow: rgba(37, 99, 235, 0.28);
+  --success-glow: rgba(21, 128, 61, 0.45);
+
+  --header-h: 60px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  color-scheme: light;
+}
+
+/* Dark theme — same token names, so every component adapts automatically.
+   theme.ts sets data-theme on <html> (from the user's choice or the system setting). */
+:root[data-theme="dark"] {
+  --primary: #3B82F6;
+  --primary-hover: #60A5FA;
+  --primary-soft: #16233F;
+  --primary-border: #1E3A8A;
+  --on-primary: #FFFFFF;
+
+  --ink: #E2E8F0;
+  --ink-2: #CBD5E1;
+  --muted: #94A3B8;
+  --subtle: #64748B;
+  --border: #1F2A3C;
+  --border-strong: #334155;
+  --surface: #111827;
+  --surface-2: #0D1424;
+  --bg: #0A0F1C;
+
+  --success: #4ADE80;
+  --success-soft: #0E2A1C;
+  --warning: #FBBF24;
+  --warning-soft: #2B2111;
+  --danger: #F87171;
+  --danger-soft: #2E1517;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+
+  --code-bg: #060B16;
+  --code-fg: #E2E8F0;
+  --tip-bg: #1E293B;
+  --tip-fg: #F8FAFC;
+  --overlay: rgba(2, 6, 16, 0.65);
+  --primary-glow: rgba(59, 130, 246, 0.35);
+  --success-glow: rgba(74, 222, 128, 0.4);
+  color-scheme: dark;
+}
+
+/* Smooth colour change when switching theme (added briefly by theme.ts) */
+:root.theme-switching *,
+:root.theme-switching *::before,
+:root.theme-switching *::after {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, fill 0.3s ease !important;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
 
 body {
-  background-color: #EFEFEF;
   margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-h1 {
-  font-family: "Montserrat", sans-serif;
-  font-weight: 750;
-  font-size: 68px;
-  line-height: 80px;
-  letter-spacing: 0.5px;
-}
-
-h2 {
-  font-family: "Montserrat", sans-serif;
-  font-weight: 700;
-  font-size: 42px;
-  line-height: 56px;
-}
-
-h3 {
-  font-family: "Montserrat", sans-serif;
-  font-weight: 700;
-  font-size: 36px;
-  line-height: 52px;
-}
-
-h4 {
-  font-family: "Montserrat", sans-serif;
-  font-weight: 700;
-  font-size: 28px;
-  line-height: 40px;
-}
-
-h5 {
-  font-family: "Montserrat", sans-serif;
-  font-weight: 600;
-  font-size: 20px;
-  line-height: 28px;
-}
-
-h6 {
-  font-family: "Montserrat", sans-serif;
-  font-weight: 600;
-  font-size: 18px;
-  line-height: 26px;
-}
-
-.pbtn {
-  font-family: "IBM Plex Sans", sans-serif;
-  font-weight: 500;
-  font-size: 16px;
-  line-height: 24px;
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-family: var(--font-display);
+  color: var(--ink);
+  line-height: 1.25;
 }
 
 p {
-  font-family: "IBM Plex Sans", sans-serif;
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 24px;
+  margin: 0;
 }
 
-.p2 {
-  font-family: "IBM Plex Sans", sans-serif;
-  font-weight: 500;
-  font-size: 14px;
-  line-height: 20px;
+button {
+  font: inherit;
+  color: inherit;
 }
 
-.p3 {
-  font-family: "IBM Plex Sans", sans-serif;
-  font-weight: 400;
-  font-size: 14px;
-  line-height: 20px;
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.p4 {
-  font-family: "IBM Plex Sans", sans-serif;
-  font-weight: 400;
-  font-size: 12px;
-  line-height: 16px;
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+}
 
-.p5 {
-  font-family: "IBM Plex Sans", sans-serif;
+::selection {
+  background: var(--primary-border);
+}
+
+/* Thin, quiet scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+/* ------------------------------------------------------------------
+   Shared primitives
+   ------------------------------------------------------------------ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
   font-weight: 600;
-  font-size: 11px;
-  line-height: 14px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s, transform 0.12s var(--ease);
+  white-space: nowrap;
 }
 
-input:focus {
-  outline: none;
+.btn svg {
+  flex-shrink: 0;
 }
 
-textarea:focus {
-  outline: none;
+.btn:active:not(:disabled),
+.icon-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.btn-primary {
+  box-shadow: 0 1px 2px var(--primary-glow);
+}
+
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-secondary {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--ink-2);
+}
+
+.btn-secondary:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-2);
+}
+
+.btn-ghost:hover {
+  background: var(--bg);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.12s var(--ease);
+  flex-shrink: 0;
+}
+
+.icon-btn:hover {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.icon-btn.active {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--primary-soft);
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.badge-neutral {
+  background: var(--bg);
+  color: var(--ink-2);
+}
+
+.badge-success { background: var(--success-soft); color: var(--success); }
+.badge-warning { background: var(--warning-soft); color: var(--warning); }
+.badge-danger  { background: var(--danger-soft);  color: var(--danger); }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Toggle switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch .slider {
+  position: absolute;
+  inset: 0;
+  background: var(--border-strong);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.switch .slider::before {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  left: 2px;
+  top: 2px;
+  background: var(--surface);
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s var(--ease);
+}
+
+.switch input:checked + .slider {
+  background: var(--primary);
+}
+
+.switch input:checked + .slider::before {
+  transform: translateX(16px);
+}
+
+.switch input:focus-visible + .slider {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Hover tooltip: add data-tip="..." to any positioned element */
+[data-tip] {
+  position: relative;
+}
+
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translate(-50%, 4px);
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--tip-bg);
+  color: var(--tip-fg);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s, transform 0.12s;
+  z-index: 50;
+}
+
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+[data-tip-pos="bottom"]::after {
+  bottom: auto;
+  top: calc(100% + 6px);
+}
+
+[data-tip-pos="right"]::after {
+  bottom: auto;
+  top: 50%;
+  left: calc(100% + 8px);
+  transform: translate(-4px, -50%);
+}
+
+[data-tip-pos="right"]:hover::after {
+  transform: translate(0, -50%);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes shimmer {
+  to { background-position: -200% 0; }
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes grow-x {
+  from { transform: scaleX(0); }
+}
+
+/* Route change */
+.page {
+  height: 100%;
+  animation: page-in 0.3s var(--ease) both;
+}
+
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Sliding pill behind the active option of a segmented control / tab bar.
+   The container needs position: relative; options sit above it. */
+.slider-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.28s var(--ease), width 0.28s var(--ease), opacity 0.2s;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.slider-host {
+  position: relative;
+}
+
+.slider-host > button {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.slider-pill.soft {
+  background: var(--primary-soft);
+  box-shadow: none;
+  border-radius: var(--radius-sm);
+}
+
+/* Smooth expand/collapse: parent toggles .open */
+.collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s var(--ease);
+}
+
+.open > .collapse {
+  grid-template-rows: 1fr;
+}
+
+.collapse-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+@keyframes star-pop {
+  from { transform: scale(0.4); }
+}
+
+/* Touch screens: no hover tooltips (they would stick after a tap) */
+@media (hover: none) {
+  [data-tip]::after { display: none; }
+}
+
+@media (max-width: 720px) {
+  input[type="text"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }

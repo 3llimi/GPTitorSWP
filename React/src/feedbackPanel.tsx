@@ -1,100 +1,101 @@
-
 import './feedbackPanel.css';
-import { useState, useEffect, useContext, useRef } from 'react';
+import { useContext, useRef, useState } from 'react';
+import { useSlider } from './hooks';
 import TaskPanel from './taskpanel';
-import { FeedbackContext } from './feedbackContext';
-import { Metrics } from './models/metrics';
 import FeedbackWindow from './feedbackWindow';
-import TaskDesc from './taskdescription';
-import NotStudyMode from './notstudymode';
+import MarkdownRenderer from './markdownRenderer';
+import { FeedbackContext } from './feedbackContext';
+import { GUIDES } from './guides';
+import { averageScore, formatScore } from './criteria';
+import { IconClipboard, IconChart, IconBook, IconChevronDown } from './icons';
 
-interface TaskPanelProps {
-    isOpenS: boolean;
-    close: () => void;
+export type RightTab = 'tasks' | 'feedback' | 'guides';
 
-    isOpenD: boolean;
-    closeD: () => void;
+interface FeedbackPanelProps {
+    tab: RightTab;
+    setTab: (t: RightTab) => void;
+    isStudyMode: boolean;
+    setIsStudyMode: (v: boolean) => void;
+    onTaskStart?: () => void;
 }
 
-// const FeedbackPanel = () => {
-const FeedbackPanel: React.FC<TaskPanelProps> = ({ isOpenS, close, isOpenD, closeD }) => {
+const Guides: React.FC = () => {
+    const [open, setOpen] = useState<string | null>(GUIDES[0].id);
+    return (
+        <div className='guides'>
+            <p className='text-muted guides-intro'>Short reference material on writing effective prompts.</p>
+            {GUIDES.map(g => {
+                const isOpen = open === g.id;
+                return (
+                    <div key={g.id} className={`guide${isOpen ? ' open' : ''}`}>
+                        <button className='guide-head' aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : g.id)}>
+                            <div>
+                                <span className='guide-title'>{g.title}</span>
+                                <span className='guide-summary'>{g.summary}</span>
+                            </div>
+                            <IconChevronDown size={16} />
+                        </button>
+                        <div className='collapse'>
+                            <div className='collapse-inner'>
+                                <div className='guide-body'>
+                                    <MarkdownRenderer text={g.body} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
 
-    // const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [isFeedbackOpen, setFeedbackOpen] = useState(true);
-    const { setFeedback } = useContext(FeedbackContext);
-    const { criteria, setCriteria } = useContext(FeedbackContext);
-    const { setTask } = useContext(FeedbackContext);
-    // const [showDescription, setShowDescription] = useState(false);
-    const [isStudyMode, setIsStudyMode] = useState(true);
-    const excludeRef = useRef<HTMLDivElement>(null);
+const FeedbackPanel: React.FC<FeedbackPanelProps> = ({ tab, setTab, isStudyMode, setIsStudyMode, onTaskStart }) => {
+    const { criteria, feedback } = useContext(FeedbackContext);
+    const hasScore = !!feedback || averageScore(criteria) > 0;
+    const tabsRef = useRef<HTMLDivElement>(null);
+    const pill = useSlider(tabsRef, [tab, isStudyMode, hasScore]);
 
-    const toggleStudyMode = () => {
-        setIsStudyMode(!isStudyMode);
-        if (isOpenS)
-            close();
-        if (isOpenD)
-            closeD();
-    };
-
-    const toggleSidebar = () => {
-        close();
-    };
-
-    const resetFeedback = () => {
-        setFeedback('');
-    };
-
-    const resetScore = () => {
-        setCriteria(new Metrics(0.0, "", 0.0, "", 0.0, "", 0.0, ""));
-    };
-
-    const toggleDescription = () => {
-        closeD();
-    };
-
-    useEffect(() => {
-        resetFeedback();
-        resetScore();
-    }, [setFeedback, setCriteria, setTask]);
-
+    const tabs: { id: RightTab; label: string; icon: JSX.Element; badge?: string }[] = [
+        ...(isStudyMode ? [{ id: 'tasks' as RightTab, label: 'Tasks', icon: <IconClipboard size={15} /> }] : []),
+        { id: 'feedback', label: 'Feedback', icon: <IconChart size={15} />, badge: hasScore ? formatScore(averageScore(criteria)) : undefined },
+        { id: 'guides', label: 'Guides', icon: <IconBook size={15} /> },
+    ];
 
     return (
-        <div className='feedbackbigcontainter'>
-            <div className='optioncontainer'  ref={excludeRef}>
-                <div className='have_a_GOOD_DAY'>
-                    {isStudyMode ? (
-                        <div className='optionS' onClick={toggleSidebar}>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className='searchsicon'>
-                                <path d="M16.9265 17.0401L20.3996 20.4001M11.3996 7.2001C13.3878 7.2001 14.9996 8.81187 14.9996 10.8001M19.2796 11.4401C19.2796 15.77 15.7695 19.2801 11.4396 19.2801C7.1097 19.2801 3.59961 15.77 3.59961 11.4401C3.59961 7.11018 7.1097 3.6001 11.4396 3.6001C15.7695 3.6001 19.2796 7.11018 19.2796 11.4401Z" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                            </svg>
-                            <p className='pbtn'>Search Tasks</p>
-                        </div>
-                    ) : (
-                        <div className='optionF'>
-                            <p className='pbtn'>Feedback</p>
-                        </div>
-                    )}
-                    <div className='mode'>
-                        <p>STUDY MODE</p>
-                        <label className="switch">
-                            <input type="checkbox" checked={isStudyMode} onChange={toggleStudyMode} />
-                            <span className="slider"></span>
-                        </label>
-                    </div>
+        <aside className='side-card card feedbackbigcontainter' aria-label='Tasks and feedback'>
+            <div className='side-head'>
+                <div className='side-tabs slider-host' role='tablist' ref={tabsRef}>
+                    <span className='slider-pill soft' style={pill} />
+                    {tabs.map(t => (
+                        <button
+                            key={t.id}
+                            role='tab'
+                            aria-selected={tab === t.id}
+                            data-active={tab === t.id}
+                            className={`side-tab ${t.id}-tab${tab === t.id ? ' active' : ''}`}
+                            onClick={() => setTab(t.id)}
+                        >
+                            {t.icon}
+                            {t.label}
+                            {t.badge && <span className='tab-badge'>{t.badge}</span>}
+                        </button>
+                    ))}
                 </div>
-                <div className='rightpanel'>
-
-
-                    <TaskPanel isOpenS={isOpenS} close={toggleSidebar} excludeRef={excludeRef} />
-                    {isStudyMode ? (
-                        <FeedbackWindow isOpenS={isOpenS} isOpenF={isFeedbackOpen} isOpenD={isOpenD} closeF={toggleDescription} />
-                    ) : (
-                        <NotStudyMode isOpenS={isOpenS} isOpenF={isFeedbackOpen} isOpenD={isOpenD} closeF={toggleDescription} />
-                    )}
-                    <TaskDesc isOpenS={isOpenS} isOpenD={isOpenD} closeD={toggleDescription} />
-                </div>
+                <label className='mode' data-tip={isStudyMode ? 'Practise against graded tasks' : 'Free practice, no tasks'} data-tip-pos='bottom'>
+                    <span>Study</span>
+                    <span className='switch'>
+                        <input type='checkbox' checked={isStudyMode} onChange={() => setIsStudyMode(!isStudyMode)} aria-label='Study mode' />
+                        <span className='slider' />
+                    </span>
+                </label>
             </div>
-        </div>
+
+            <div className='side-body' key={tab}>
+                {tab === 'tasks' && isStudyMode && <TaskPanel onStart={() => { setTab('feedback'); onTaskStart?.(); }} />}
+                {tab === 'feedback' && <FeedbackWindow />}
+                {tab === 'guides' && <Guides />}
+            </div>
+        </aside>
     );
 };
 

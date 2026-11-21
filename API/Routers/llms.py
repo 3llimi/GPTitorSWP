@@ -9,3 +9,4 @@ router = APIRouter()
 @router.get("", response_model=List[schemas.LLM])
 def get_llm_list(db: Session = Depends(database.get_db)):
     return crud.get_llm_list(db=db)
+

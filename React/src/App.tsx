@@ -1,14 +1,15 @@
 import './App.css';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { useState, useContext, useEffect, useRef } from 'react';
 import { FeedbackContext } from './feedbackContext';
 import Sidebar from './sidebar';
 import NavBar from './header';
 import StudyMode from './studymode';
 import Profile from './profile';
-import { Metrics } from './models/metrics';
+import Tutorial from './Tutorial';
 import API_URL from './config';
 import SendContextProvider from './sendContextProvider';
+import { emptyMetrics, metricsFromApi } from './criteria';
 
 interface Message {
   id: number;
@@ -22,28 +23,46 @@ interface MessageSimplifyed {
   text: string,
 }
 
+export interface Query {
+  display_id: number;
+  stored_id: number;
+  text: string;
+  date: Date;
+  isMarked: boolean;
+  llm_id?: number | null;
+}
+
+const addHoursToDate = (date: Date, hours: number): Date => {
+  const newDate = new Date(date.getTime());
+  newDate.setHours(newDate.getHours() + hours);
+  return newDate;
+};
+
+/* Re-mounts the page on navigation so it fades in. */
+const Page: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { pathname } = useLocation();
+  return <div key={pathname} className='page'>{children}</div>;
+};
+
 const App: React.FC = () => {
 
-  const { setFeedback, criteria, setCriteria } = useContext(FeedbackContext);
+  const { setFeedback, setCriteria } = useContext(FeedbackContext);
   const [convId, setConvId] = useState(1);
-  const [queries, setQueries] = useState<{ display_id: number; stored_id: number; text: string; date: Date; isMarked: boolean }[]>([]);
+  const [queries, setQueries] = useState<Query[]>([]);
   const [nextId, setNextId] = useState(1);
   const [responses, setResponses] = useState<MessageSimplifyed[]>([]);
   const [requests, setRequests] = useState<MessageSimplifyed[]>([]);
   const hasMounted = useRef(false);
   const [selectedLLM, setSelectedLLM] = useState<number | null>(null);
-  const skipEffect = useRef(false);
   const isLiked = useRef(false);
   const isRenamed = useRef(false);
   const moveForbidden = useRef(false);
   const needInAddToFavList = useRef(false);
-  const [likedQueries, setLikedQueries] = useState<{ display_id: number; stored_id: number; text: string; date: Date; isMarked: boolean }[]>([]);
-
-  const addHoursToDate = (date: Date, hours: number): Date => {
-    const newDate = new Date(date.getTime());
-    newDate.setHours(newDate.getHours() + hours);
-    return newDate;
-  };
+  const [likedQueries, setLikedQueries] = useState<Query[]>([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [historyError, setHistoryError] = useState(false);
+  const [runTutorial, setRunTutorial] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (queries.length === 0) {
@@ -63,7 +82,6 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (isLiked.current) {
-      console.log("убемубе");
       const savedMarks = queries.reduce<Record<number, boolean>>((acc, item) => {
         acc[item.stored_id] = item.isMarked || false;
         return acc;
@@ -76,9 +94,6 @@ const App: React.FC = () => {
   const addQueries = (data: any[]) => {
     const savedMarksJson = localStorage.getItem('isMarked');
     const savedMarks = savedMarksJson ? JSON.parse(savedMarksJson) : {};
-    if (savedMarksJson) {
-      console.log("it's good");
-    }
     needInAddToFavList.current = true;
     setQueries(
       data.map(item => ({
@@ -87,7 +102,7 @@ const App: React.FC = () => {
         text: item.title,
         date: addHoursToDate(new Date(item.created_at.replace(" ", "T")), 3),
         llm_id: item.llm_id,
-        isMarked: savedMarks[item.conversation_id],
+        isMarked: !!savedMarks[item.conversation_id],
       })));
     const highestId = Math.max(...data.map(item => item.conversation_id));
     setNextId(highestId + 1);
@@ -95,213 +110,224 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (needInAddToFavList.current) {
-      const filteredQueries = queries.filter(query => query.isMarked);
-      setLikedQueries(filteredQueries);
+      setLikedQueries(queries.filter(query => query.isMarked));
       needInAddToFavList.current = false;
     }
   }, [queries]);
 
+  const fetchDialogs = async () => {
+    setHistoryError(false);
+    try {
+      const response = await fetch(`${API_URL}/conversations`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error(String(response.status));
+      const data = await response.json();
+      if (data.length === 0) {
+        await CreateConversation();
+      } else {
+        moveForbidden.current = true;
+        addQueries(data);
+      }
+    } catch (error) {
+      console.error('Could not load conversations: ', error);
+      setHistoryError(true);
+    } finally {
+      setHistoryLoaded(true);
+    }
+  };
+
   useEffect(() => {
     if (hasMounted.current) return;
     hasMounted.current = true;
-    const fetchDialogs = async () => {
-      setQueries([]);
-      setNextId(1);
-      try {
-        const response = await fetch(`${API_URL}/conversations`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
-        const data = await response.json();
-        if (data.length === 0) {
-          CreateConversation();
-        }
-        else {
-          moveForbidden.current = true;
-          addQueries(data);
-        }
-      } catch (error) {
-        console.error('There was a mistake with data uploading: ', error);
-      }
-    };
+    setQueries([]);
+    setNextId(1);
     fetchDialogs();
   }, []);
 
   const renameConversation = (conversationId: number, importText: string) => {
-    const updatedQueries = queries.map(item =>
+    setQueries(prev => prev.map(item =>
       item.stored_id === conversationId ? { ...item, text: importText } : item
-    );
+    ));
     isRenamed.current = true;
-    console.log(isRenamed.current);
-    setQueries(updatedQueries);
     setTimeout(() => {
       isRenamed.current = false;
-    }, 1000); 
-  }
+    }, 1000);
+  };
 
-  const CreateConversation = async () => {
-    if (selectedLLM === null) {
-      setSelectedLLM(1);
+  const CreateConversation = async (llmOverride?: number, replaceStoredId?: number) => {
+    const llmId = llmOverride ?? selectedLLM ?? 1;
+    if (selectedLLM !== llmId) {
+      setSelectedLLM(llmId);
     }
     const response = await fetch(`${API_URL}/conversations`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        llm_id: selectedLLM,
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ llm_id: llmId }),
     });
+    if (!response.ok) throw new Error(`Could not create conversation (${response.status})`);
 
     const data = await response.json();
-    console.log(`New conversation_id: ${data.conversation_id}`); // ID in DB
 
-    const newQuery = {
+    const newQuery: Query = {
       display_id: nextId,
       stored_id: data.conversation_id,
       text: `Untitled`,
       date: addHoursToDate(new Date(data.created_at.replace(' ', 'T')), 3),
-      llm_id: selectedLLM,
+      llm_id: llmId,
       isMarked: false,
     };
 
-    setQueries(prevQueries => [...prevQueries, newQuery]);
-    setNextId(nextId + 1);
-    console.log(newQuery.date);
-    console.log(selectedLLM)
+    /* Single update so the sidebar never sees an intermediate list (which would open the wrong chat). */
+    setQueries(prevQueries => [...prevQueries.filter(q => q.stored_id !== replaceStoredId), newQuery]);
+    setNextId(n => n + 1);
   };
+
+  const isCurrentEmpty = () => {
+    const current = queries.find(q => q.stored_id === convId);
+    return current && current.text === 'Untitled' && requests.length === 0 ? current : null;
+  };
+
+  /* "New chat" reuses the current conversation if nothing has been sent in it yet,
+     so the history doesn't fill up with empty "Untitled" entries. */
+  const newChat = async () => {
+    if (isCurrentEmpty()) {
+      (document.querySelector('.chatinput') as HTMLTextAreaElement | null)?.focus();
+      return;
+    }
+    await CreateConversation();
+  };
+
+  /* Picking a model starts a new conversation with it (one model per conversation).
+     An empty current conversation is replaced rather than left behind. */
+  const switchModel = async (llmId: number) => {
+    if (llmId === selectedLLM) return;
+    setSelectedLLM(llmId);
+    const empty = isCurrentEmpty();
+    await CreateConversation(llmId, empty?.stored_id);
+    if (empty) {
+      fetch(`${API_URL}/conversations/${empty.stored_id}`, { method: 'DELETE' })
+        .catch(error => console.error('Could not delete conversation:', error));
+    }
+  };
+
+  const openToken = useRef(0);
 
   const openConversation = async (stored_id: number) => {
-
     localStorage.setItem('lastOpenedDialogId', stored_id.toString());
-    skipEffect.current = true;
-    console.log("ett");
+    /* Ignore responses from an older open request if the user has since opened another chat. */
+    const token = ++openToken.current;
+    const stale = () => token !== openToken.current;
 
-    const llm_response = await fetch(`${API_URL}/conversations/${stored_id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
+    try {
+      const llm_response = await fetch(`${API_URL}/conversations/${stored_id}`);
+      const llm_data = await llm_response.json();
+      const response = await fetch(`${API_URL}/conversations/${stored_id}/messages`);
+      const data = await response.json();
+      if (stale()) return;
+
+      setSelectedLLM(llm_data.llm_id);
+      setConvId(stored_id);
+
+      const parsedMessages: Message[] = data.map((item: any) => ({
+        id: item.message_id,
+        message_class: item.message_class,
+        text: item.content,
+        feedback_id: item.feedback_id,
+      }));
+
+      const pick = (cls: string) => parsedMessages
+        .filter(message => message.message_class === cls)
+        .map(({ id, text }) => ({ id, text }));
+
+      const extractedRequests = pick('Request');
+      const extractedResponses = pick('Response');
+
+      setResponses(extractedResponses);
+      setRequests(extractedRequests);
+
+      if (extractedResponses.length > 0) {
+        const lastRequest = extractedRequests[extractedRequests.length - 1].id;
+        const response_2 = await fetch(`${API_URL}/feedback/${lastRequest}`);
+        const data_2 = await response_2.json();
+        if (stale()) return;
+        setFeedback(data_2.comment);
+        setCriteria(metricsFromApi(data_2.metrics));
+      } else {
+        setFeedback('');
+        setCriteria(emptyMetrics());
       }
-    });
-    const llm_data = await llm_response.json();
-    setSelectedLLM(llm_data.llm_id);
-    console.log(llm_data.llm_id);
-
-    console.log('Conversation ' + stored_id + ' is opening... ');
-    const response = await fetch(`${API_URL}/conversations/${stored_id}/messages`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-
-    const data = await response.json();
-    setConvId(stored_id);
-    console.log(`Number of messages: ${data.length}`);
-
-    const parsedMessages: Message[] = data.map((item: any) => ({
-      id: item.message_id,
-      message_class: item.message_class,
-      text: item.content,
-      feedback_id: item.feedback_id,
-    }));
-
-    const responses = parsedMessages.filter(message => message.message_class === 'Response');
-    const requests = parsedMessages.filter(message => message.message_class === 'Request');
-
-    const extractIdAndText = (messages: Message[]) => {
-      return messages.map(({ id, text }) => ({ id, text }));
-    };
-
-    const extractedRequests = extractIdAndText(requests);
-    const extractedResponses = extractIdAndText(responses);
-
-    setResponses(extractedResponses);
-    setRequests(extractedRequests);
-
-    if (extractedResponses.length > 0) {
-      const lastRequest = extractedRequests[extractedRequests.length - 1].id;
-      const response_2 = await fetch(`${API_URL}/feedback/${lastRequest}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      const data_2 = await response_2.json();
-
-      setFeedback(data_2.comment);
-      setCriteria(new Metrics(
-        data_2.metrics.criterion_1.score,
-        data_2.metrics.criterion_1.comment,
-        data_2.metrics.criterion_2.score,
-        data_2.metrics.criterion_2.comment,
-        data_2.metrics.criterion_3.score,
-        data_2.metrics.criterion_3.comment,
-        data_2.metrics.criterion_4.score,
-        data_2.metrics.criterion_4.comment
-      ));
-    } else {
-      setFeedback('');
-      setCriteria(new Metrics(0.0, "", 0.0, "", 0.0, "", 0.0, ""));
+    } catch (error) {
+      console.error('Could not open conversation:', error);
     }
-    skipEffect.current = false;
   };
 
-  useEffect(() => {
-    console.log("Criteria updated:", criteria);
-  }, [criteria]);
-
-
   const deleteConversation = async (display_id: number, stored_id: number) => {
-    setQueries(queries.filter(query => query.display_id !== display_id));
-    const response = await fetch(`${API_URL}/conversations/${stored_id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-    console.log(response.json());
+    setQueries(prev => prev.filter(query => query.display_id !== display_id));
+    if (stored_id === convId) {
+      setRequests([]);
+      setResponses([]);
+      setFeedback('');
+      setCriteria(emptyMetrics());
+    }
+    try {
+      await fetch(`${API_URL}/conversations/${stored_id}`, { method: 'DELETE' });
+    } catch (error) {
+      console.error('Could not delete conversation:', error);
+    }
   };
 
   return (
     <SendContextProvider>
       <Router basename='/gptitor'>
-        <NavBar />
-        <div className='sidebarr'>
-          <Sidebar
-            renameConversation={renameConversation}
-            CreateConversation={CreateConversation}
-            openConversation={openConversation}
-            deleteConversation={deleteConversation}
-            requests={requests}
-            responses={responses}
-            queries={queries}
-            toMark={toMark}
-            isLiked={isLiked}
-            likedQueries={likedQueries}
-            isRenamed={isRenamed}
-            moveForbidden={moveForbidden}
-          />
+        <div className='app-shell'>
+          <NavBar onStartTour={() => { setMenuOpen(false); setRunTutorial(true); }} onToggleMenu={() => setMenuOpen(o => !o)} />
+          <div className='app-body'>
+            <Sidebar
+              renameConversation={renameConversation}
+              CreateConversation={newChat}
+              openConversation={openConversation}
+              deleteConversation={deleteConversation}
+              queries={queries}
+              toMark={toMark}
+              isLiked={isLiked}
+              likedQueries={likedQueries}
+              isRenamed={isRenamed}
+              moveForbidden={moveForbidden}
+              activeConversationId={convId}
+              historyLoaded={historyLoaded}
+              historyError={historyError}
+              retryHistory={fetchDialogs}
+              forceExpanded={runTutorial}
+              mobileOpen={menuOpen}
+              onMobileClose={() => setMenuOpen(false)}
+            />
+            <main className='app-main'>
+              <Page>
+              <Routes>
+                <Route path="/" element={<Navigate to="/chatpage" />} />
+                <Route path='/chatpage' element={<StudyMode
+                  queries={queries}
+                  createConversation={CreateConversation}
+                  switchModel={switchModel}
+                  requests={requests}
+                  setRequests={setRequests}
+                  responses={responses}
+                  setResponses={setResponses}
+                  conversation_id={convId}
+                  selectedLLM={selectedLLM}
+                  setSelectedLLM={setSelectedLLM}
+                  renameConversation={renameConversation}
+                />} />
+                <Route path='/profile' element={<Profile />} />
+                <Route path="*" element={<Navigate to="/chatpage" />} />
+              </Routes>
+              </Page>
+            </main>
+          </div>
+          {runTutorial && <Tutorial runTutorial={runTutorial} onClose={() => setRunTutorial(false)} />}
         </div>
-        <Routes>
-          <Route path="/" element={<Navigate to="/chatpage" />} />
-          <Route path='/chatpage' element={<StudyMode
-            queries={queries}
-            createConversation={CreateConversation}
-            requests={requests}
-            setRequests={setRequests}
-            responses={responses}
-            setResponses={setResponses}
-            conversation_id={convId}
-            selectedLLM={selectedLLM}
-            setSelectedLLM={setSelectedLLM}
-            skipEffect={skipEffect}
-            renameConversation={renameConversation}
-          />} />
-          <Route path='/profile' element={<Profile />} />
-        </Routes>
       </Router>
     </SendContextProvider>
   );

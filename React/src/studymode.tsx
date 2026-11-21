@@ -1,8 +1,13 @@
 import './studymode.css';
-import { MutableRefObject, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
+import { FeedbackContext } from './feedbackContext';
+import { averageScore, formatScore } from './criteria';
+import { useIsMobile, useSlider, COMPACT_QUERY } from './hooks';
+import { IconMessages, IconChart } from './icons';
 import { ConversationPanel } from './conversationPanel';
-import FeedbackPanel from './feedbackPanel';
-import TaskDesc from "./taskdescription"
+import FeedbackPanel, { RightTab } from './feedbackPanel';
+import { useTaskContext } from './taskContext';
+import type { Query } from './App';
 
 interface MessageSimplifyed {
     id: number,
@@ -10,8 +15,9 @@ interface MessageSimplifyed {
 }
 
 interface StudyModeProps {
-    queries: { display_id: number; stored_id: number; text: string; date: Date; isMarked: boolean }[];
+    queries: Query[];
     createConversation: () => Promise<void>;
+    switchModel: (llmId: number) => Promise<void>;
     requests: MessageSimplifyed[];
     setRequests: React.Dispatch<React.SetStateAction<MessageSimplifyed[]>>;
     responses: MessageSimplifyed[];
@@ -19,73 +25,81 @@ interface StudyModeProps {
     conversation_id: number;
     selectedLLM: number | null;
     setSelectedLLM: (llmId: number | null) => void;
-    skipEffect: MutableRefObject<boolean>;
     renameConversation: (conversation_id: number, importText: string) => void;
 }
 
+const MODE_KEY = 'gptitor.studyMode';
 
-const StudyMode: React.FC<StudyModeProps> = ({ queries, createConversation, requests, responses, setRequests, setResponses, conversation_id,
-    selectedLLM, setSelectedLLM, skipEffect, renameConversation }) => {
+const StudyMode: React.FC<StudyModeProps> = (props) => {
+    const { setSelectedTask } = useTaskContext();
+    const [isStudyMode, setIsStudyMode] = useState(() => {
+        try { return localStorage.getItem(MODE_KEY) !== '0'; } catch { return true; }
+    });
+    const [tab, setTab] = useState<RightTab>(isStudyMode ? 'tasks' : 'feedback');
 
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [showDescription, setShowDescription] = useState(false);
+    useEffect(() => {
+        try { localStorage.setItem(MODE_KEY, isStudyMode ? '1' : '0'); } catch { /* ignore */ }
+        if (!isStudyMode) {
+            setSelectedTask(null);
+            if (tab === 'tasks') setTab('feedback');
+        }
+    }, [isStudyMode]);
 
-    const toggleSidebar = () => {
-        setIsSidebarOpen(!isSidebarOpen);
+    /* Compact screens: show the chat or the side panel, with a switcher on top */
+    const compact = useIsMobile(COMPACT_QUERY);
+    const [view, setView] = useState<'chat' | 'panel'>('chat');
+    const [unseen, setUnseen] = useState(false);
+    const switchRef = useRef<HTMLDivElement>(null);
+    const pill = useSlider(switchRef, [view, compact, unseen]);
+    const { criteria, feedback } = useContext(FeedbackContext);
+    const score = averageScore(criteria);
+
+    const showView = (v: 'chat' | 'panel') => {
+        setView(v);
+        if (v === 'panel') setUnseen(false);
     };
 
-    const toggleDescription = () => {
-        setShowDescription(!showDescription);
-        // setFeedbackOpen(!isFeedbackOpen);
-    };
-
-
+    const focusComposer = () =>
+        window.setTimeout(() => (document.querySelector('.chatinput') as HTMLTextAreaElement | null)?.focus(), 50);
 
     return (
-        <div >
-            <svg className='leftgradient' width="674.1" height="509.6" viewBox="74.9 0 674.1 509.6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="327.5" cy="421.5" r="421.5" fill="url(#paint0_radial_878_1741)" />
-                <defs>
-                    <radialGradient id="paint0_radial_878_1741" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(337.5 422) rotate(-59.5461) scale(429.689)">
-                        <stop stop-color="#AAABFA" />
-                        <stop offset="0.916" stop-color="#EFEFEF" />
-                        <stop offset="1" stop-color="#EFEFEF" />
-                    </radialGradient>
-                </defs>
-            </svg>
-            <svg className='rightgradient' width="429" height="336" viewBox="0 0 429 336" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="336.5" cy="336.5" r="336.5" fill="url(#paint0_radial_878_1740)" />
-                <defs>
-                    <radialGradient id="paint0_radial_878_1740" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(344.483 336.899) rotate(-59.5461) scale(343.037)">
-                        <stop stop-color="#AAABFA" />
-                        <stop offset="0.916" stop-color="#EFEFEF" />
-                        <stop offset="1" stop-color="#EFEFEF" />
-                    </radialGradient>
-                </defs>
-            </svg>
-            <div className='panels'>
-                <ConversationPanel
-                    queries={queries}
-                    createConversation={createConversation}
-                    isOpenS={isSidebarOpen}
-                    close={toggleSidebar}
-                    requests={requests}
-                    setRequests={setRequests}
-                    isOpenD={showDescription}
-                    closeD={toggleDescription}
-                    setResponses={setResponses}
-                    responses={responses}
-                    conversation_id={conversation_id}
-                    selectedLLM={selectedLLM}
-                    setSelectedLLM={setSelectedLLM}
-                    skipEffect={skipEffect}
-                    renameConversation={renameConversation}
-                />
-                <FeedbackPanel isOpenS={isSidebarOpen} close={toggleSidebar} isOpenD={showDescription} closeD={toggleDescription}></FeedbackPanel>
-            </div>
+        <div className='chat-page' data-view={view}>
+            {compact && (
+                <div className='view-switch slider-host' role='tablist' aria-label='View' ref={switchRef}>
+                    <span className='slider-pill' style={pill} />
+                    <button role='tab' aria-selected={view === 'chat'} data-active={view === 'chat'} onClick={() => showView('chat')}>
+                        <IconMessages size={15} /> Chat
+                    </button>
+                    <button role='tab' aria-selected={view === 'panel'} data-active={view === 'panel'} onClick={() => showView('panel')}>
+                        <IconChart size={15} /> {isStudyMode ? 'Tasks & feedback' : 'Feedback'}
+                        {(feedback || score > 0) && <span className={`view-badge${unseen ? ' pulse' : ''}`}>{formatScore(score)}</span>}
+                    </button>
+                </div>
+            )}
+            <ConversationPanel
+                {...props}
+                isStudyMode={isStudyMode}
+                onSent={() => {
+                    setTab('feedback');
+                    if (compact) setUnseen(true);
+                }}
+                onBrowseTasks={() => {
+                    setTab('tasks');
+                    showView('panel');
+                }}
+            />
+            <FeedbackPanel
+                tab={tab}
+                setTab={setTab}
+                isStudyMode={isStudyMode}
+                setIsStudyMode={setIsStudyMode}
+                onTaskStart={() => {
+                    showView('chat');
+                    focusComposer();
+                }}
+            />
         </div>
     );
 };
-
 
 export default StudyMode;

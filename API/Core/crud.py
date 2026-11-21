@@ -6,9 +6,10 @@ from Utilities.feedback import (get_chatbot_response,
                                 calculate_metrics)
 from Utilities.llm import LLM
 from Utilities.conversation import generate_title
+from Utilities import answer_engine
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, case
 from sqlalchemy import distinct
 from typing import Dict, Any, List
 
@@ -32,8 +33,11 @@ async def rename_conversation(db: Session,
         if not message:
             raise HTTPException(status_code=404,
                             detail=f"Messages in conversation with ID {conversation_id} not found.")
-        generated_title = await generate_title(query=message.content,
-                                               llm_id=1)
+        if answer_engine.enabled():
+            generated_title = answer_engine.title(message.content)
+        else:
+            generated_title = await generate_title(query=message.content,
+                                                   llm_id=1)
         conversation.title = generated_title
     else:
         if not new_title.strip():
@@ -175,7 +179,8 @@ def get_all_conversations(db: Session,
 async def send_query(db: Session,
                      conversation_id: int,
                      query: schemas.Query,
-                     user_id: int):
+                     user_id: int,
+                     is_cancelled=None):
     if not query.query_text.strip():
         raise HTTPException(
             status_code=400,
@@ -202,20 +207,32 @@ async def send_query(db: Session,
                 raise HTTPException(
                     status_code=404,
                     detail=f"Task with ID {query.task_id} not found.")
-        comment = await get_chatbot_comment(
-            query=query.query_text,
-            task=task,
-            llm_id=llm_id
-        )
-        metrics = await calculate_metrics(
-            query=query.query_text,
-            task=task,
-            llm_id=llm_id
-        )
-        response = await get_chatbot_response(
-            query=query.query_text,
-            llm_id=llm_id
-        )
+        if answer_engine.enabled():
+            task_row = (db.query(models.Task).filter_by(task_id=query.task_id).first()
+                        if query.task_id else None)
+            task_name = task_row.task_name if task_row else ""
+            task_desc = task_row.task_description if task_row else ""
+            await answer_engine.simulate_latency()
+            comment, metrics = answer_engine.feedback(query.query_text, task_desc, task_name)
+            response = answer_engine.answer(query.query_text, task_name, task_desc)
+        else:
+            comment = await get_chatbot_comment(
+                query=query.query_text,
+                task=task,
+                llm_id=llm_id
+            )
+            metrics = await calculate_metrics(
+                query=query.query_text,
+                task=task,
+                llm_id=llm_id
+            )
+            response = await get_chatbot_response(
+                query=query.query_text,
+                llm_id=llm_id
+            )
+        if is_cancelled is not None and await is_cancelled():
+            # The user pressed Stop: don't save a prompt they abandoned.
+            raise HTTPException(status_code=499, detail="Request cancelled by the client.")
         response_created_at = datetime.now()
         
         feedback = models.Feedback(
@@ -483,14 +500,15 @@ def calculate_personal_statistics(db: Session,
         metrics = {k: v if v is not None
                    else 0 for k, v in avg_metrics.items()}
         total_activity_query = db.query(
-            func.count(
+            func.count(func.distinct(
                 models.Conversation.conversation_id
-                    ).label('total_conversations'),
+                    )).label('total_conversations'),
             func.count(
                 models.Message.message_id
                     ).label('total_messages'),
             func.count(
-                func.distinct(models.Message.task_id)
+                # task_id 0 means free practice, not a task
+                func.distinct(case((models.Message.task_id > 0, models.Message.task_id)))
                     ).label('task_ids')
         ).join(
             models.Message,
@@ -508,8 +526,8 @@ def calculate_personal_statistics(db: Session,
                 detail=f"Total activity not found for user ID {user_id}."
             )
         total_activity = {
-            "total_queries": total_activity_query.total_conversations,
-            "total_conversations": total_activity_query.total_messages,
+            "total_queries": total_activity_query.total_messages,
+            "total_conversations": total_activity_query.total_conversations,
             "tasks_solved": total_activity_query.task_ids
         }
         daily_activity_query = db.query(

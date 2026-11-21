@@ -9,8 +9,10 @@ const config: Config.InitialOptions = {
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
   moduleNameMapper: {
-        '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-    },
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    // react-markdown and its plugins ship ESM only; tests use a plain-text stand-in
+    '^\\./markdownRenderer$': '<rootDir>/src/test/markdownStub.tsx',
+  },
   testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$',
   coverageDirectory: 'coverage', // Directory where coverage reports are stored
   collectCoverage: true, // Enable collecting coverage information

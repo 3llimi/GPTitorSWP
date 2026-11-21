@@ -2,9 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="https://unionepro.ru/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GPTitor</title>
+    <link rel="icon" type="image/svg+xml" href="/gptitor/favicon.svg" />
+    <meta name="theme-color" content="#FFFFFF" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>GPTitor · Prompt trainer</title>
+    <script>
+      /* Apply the saved/system theme before first paint to avoid a flash. */
+      (function () {
+        var pref = null;
+        try { pref = localStorage.getItem('gptitor.theme'); } catch (e) {}
+        var dark = pref === 'dark' || (pref !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

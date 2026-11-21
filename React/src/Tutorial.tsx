@@ -1,137 +1,115 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import Joyride, { Step, CallBackProps, STATUS } from 'react-joyride';
-import './Tutorial.css';
+
 const steps: Step[] = [
     {
+        target: '.chat-card',
+        title: 'Your practice space',
+        content: 'Write prompts here. Each prompt you send is answered by the selected model and graded on four prompt-writing criteria.',
+        disableBeacon: true,
+        placement: 'right',
+    },
+    {
+        target: '.model-picker',
+        title: 'Pick a model',
+        content: 'Each conversation uses one model. Choosing a different model starts a new conversation with it, so you can compare how models react to the same prompt.',
+        disableBeacon: true,
+    },
+    {
+        target: '.side-tabs',
+        title: 'Tasks, feedback and guides',
+        content: 'Browse graded tasks, see the score and feedback for your latest prompt, or read short guides on prompting techniques.',
+        disableBeacon: true,
+    },
+    {
         target: '.mode',
-        content: 'You can switch between study mode and non-study mode through this switch.',
-        title: "MODE SWITCH",
+        title: 'Study mode',
+        content: 'With study mode on you practise against tasks. Turn it off to chat freely and still get feedback on every prompt.',
         disableBeacon: true,
     },
     {
-        target: '.lowpart',
-        content: 'This the feedback panel where you will access the feedback given by the our LLM along with the cumiltive grade to your promt with grades on specfic critereas.',
-        title: "FEEDBACK PANEL",
+        target: '.new-chat-btn',
+        title: 'New conversation',
+        content: 'Start a fresh conversation at any time.',
+        disableBeacon: true,
+        placement: 'right',
+    },
+    {
+        target: '.conv-list',
+        title: 'Your history',
+        content: 'Conversations are grouped by date. Hover one to star, rename or delete it, and use the search box to find old prompts.',
+        disableBeacon: true,
+        placement: 'right',
+    },
+    {
+        target: '.main-nav',
+        title: 'Track your progress',
+        content: 'Open Progress to see your activity over time and how your average score develops on each criterion.',
         disableBeacon: true,
     },
     {
-        target: '.more-details-btn',
-        content: 'Click on more details to have additional feedback on a specific criteria.',
-        title: "CRITERIA FEEDBACK",
+        target: '.composer',
+        title: "You're ready",
+        content: "That's it. Write your first prompt and let's get better at prompting!",
         disableBeacon: true,
-    },
-    {
-        target: '.TaskDlinex',
-        content: 'Click on view task to open the description to the selected task.',
-        title: "DESCRIPTION",
-        disableBeacon: true,
-    },
-    {
-        target: '.optionS',
-        content: 'Click on this button to hide/show the task panel, let us practice it now, click it to hide the the task panel (PLEASE CLICK IT SO THE TUTORIAL PROCEED).',
-        title: "SEARCH TASK",
-        disableBeacon: true,
-    },
-    {
-        target: '.panelcontainer',
-        content: 'You can choose a task through this task panel, the tasks are sorted according to their categories.',
-        title: "TASK PANEL",
-        disableBeacon: true,
-    },
-    {
-        target: '.chatbigcontainter',
-        content: 'This is the conversation panel, where the magic happens.',
-        title: "CONVERSATION PANEL",
-        disableBeacon: true,
-    },
-    {
-        target: '.option',
-        content: 'You can select LLMs through clicking on the LLM name, you can have one LLM per conversation, clicking on a different LLM that it is not used in the current conversation will automatically create a new conversation with selected LLM.',
-        title: "LLM SWITCH",
-        disableBeacon: true,
-    },
-    {
-        target: '.sidebarhidden',
-        content: 'This is the sidebar when it is hidden.',
-        title: "SIDEBAR",
-        disableBeacon: true,
-    },
-    {
-        target: '.tutomenuiconhidden',
-        content: 'Click the menu icon so it expands and you will be able to access its functionalities (PLEASE CLICK IT SO THE TUTORIAL PROCEED).',
-        disableBeacon: true,
-    },
-    {
-        target: '.chaticonhidden',
-        content: 'Click on the chat icon to create a new conversation.',
-        title: "NEW CHAT",
-        disableBeacon: true,
-    },
-    {
-        target: '.queries',
-        content: 'This is your query list for today.',
-        title: "QUERIES",
-        disableBeacon: true,
-    },
-    {
-        target: '.actions',
-        content: 'These are the actions that you can perform on a certain query, you can delete a query from your history, you can edit its title, or mark it through the like button.',
-        title: "ACTIONS",
-        disableBeacon: true,
-    },
-    {
-        target: '.favicon',
-        content: 'To show only liked queries click on this icon.',
-        title: "SHOW LIKED QUERY",
-        disableBeacon: true,
-    },
-    {
-        target: '.inputField',
-        content: 'Now you are familiar with our product,Now lets get better at prompting.',
-        title: "START",
-        disableBeacon: true,
+        placement: 'top',
     },
 ];
+
 interface TutorialProps {
     runTutorial: boolean;
     onClose: () => void;
 }
+
+/* Only keep steps whose target is visible at the current screen size (e.g. phones hide the sidebar). */
+const visibleSteps = () =>
+    steps.filter(s => {
+        const el = typeof s.target === 'string' ? document.querySelector<HTMLElement>(s.target) : null;
+        if (!el) return false;
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && r.right > 0 && r.left < window.innerWidth;
+    });
+
 const Tutorial: React.FC<TutorialProps> = ({ runTutorial, onClose }) => {
-    const [run, setRun] = React.useState(true);
-    useEffect(() => {
-        if (runTutorial) {
-            setRun(true);
-        }
-    }, [runTutorial]);
-
-
+    const [active] = React.useState(visibleSteps);
     const handleJoyrideCallback = (data: CallBackProps) => {
         const { status } = data;
         if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
             localStorage.setItem('tutorialCompleted', 'true');
-            setRun(false);
-            setTimeout(() => setRun(true), 0);
             onClose();
         }
     };
 
+    const css = getComputedStyle(document.documentElement);
+    const v = (name: string) => css.getPropertyValue(name).trim();
 
     return (
         <Joyride
-            steps={steps}
-            run={run}
+            steps={active}
+            run={runTutorial}
             continuous
             showSkipButton
             showProgress
+            scrollToFirstStep
             callback={handleJoyrideCallback}
-            spotlightClicks={true}
-            disableOverlayClose={true}
+            disableOverlayClose
+            locale={{ last: 'Finish', skip: 'Skip tour' }}
             styles={{
                 options: {
-                    arrowColor: "#2287DA",
-                    primaryColor: "#7B61FF",
+                    primaryColor: v('--primary'),
+                    textColor: v('--ink-2'),
+                    arrowColor: v('--surface'),
+                    backgroundColor: v('--surface'),
+                    overlayColor: v('--overlay'),
+                    zIndex: 1000,
                 },
-
+                tooltip: { borderRadius: 12, padding: 18, fontFamily: v('--font-body') },
+                tooltipTitle: { fontSize: 16, fontWeight: 700, textAlign: 'left', color: v('--ink') },
+                tooltipContent: { fontSize: 14, textAlign: 'left', padding: '8px 0 0' },
+                buttonNext: { borderRadius: 8, fontWeight: 600, fontSize: 14, padding: '9px 14px' },
+                buttonBack: { color: v('--muted'), fontSize: 14 },
+                buttonSkip: { color: v('--muted'), fontSize: 13 },
+                spotlight: { borderRadius: 12 },
             }}
         />
     );
