@@ -3,6 +3,8 @@
 **Learn to write better prompts by practising them.**
 GPTitor is a prompt-writing sandbox: pick a task, write a prompt, and get an answer together with a score and concrete feedback on how to improve the prompt.
 
+**Try it online: [3llimi.github.io/GPTitorSWP](https://3llimi.github.io/GPTitorSWP/)**. It runs entirely in your browser, and your conversations are saved on your device only.
+
 <p align="center">
   <img src="Media/features/practice.gif" alt="Picking a task, writing a prompt and getting an answer with a score and feedback" width="100%">
 </p>
@@ -61,7 +63,7 @@ There's also a guided tour (**Take the tour** in the header) and short guides on
 
 ## How the answers work
 
-Answers and grades come from GPTitor's built-in answer engine ([`API/Utilities/answer_engine.py`](API/Utilities/answer_engine.py)), so no external AI service or API key is needed.
+Answers and grades come from GPTitor's built-in answer engine, so no external AI service or API key is needed. It exists in two identical versions: Python in the backend ([`API/Utilities/answer_engine.py`](API/Utilities/answer_engine.py)) and TypeScript in the browser ([`React/src/localApi/answerEngine.ts`](React/src/localApi/answerEngine.ts)). If you change one, change the other too.
 
 - **Answers** follow what the prompt asks for: a story, an email, a table, bullet points, a plan, a comparison or code.
 - **Grading** reads the prompt itself. It checks for a role, context, an audience, an output format, constraints, vague wording and length, and for task prompts, whether the task's key facts are included.
@@ -72,7 +74,18 @@ A better prompt really does get a better score.
 
 ### Prerequisites
 - **Node.js** 18 or newer
-- **Python** 3.9 or newer
+- **Python** 3.9 or newer (only to run the backend)
+
+### Quick start (frontend only)
+By default the frontend doesn't need the backend. A built-in copy of the API ([`React/src/localApi`](React/src/localApi)) answers its requests in the browser and keeps data in `localStorage`. This is the version deployed to GitHub Pages.
+```bash
+cd React
+npm install
+npm run dev
+```
+Open http://localhost:5173/gptitor/.
+
+To use the FastAPI backend instead, follow the steps below.
 
 ### 1. Clone the repository
 ```bash
@@ -93,16 +106,17 @@ The API runs on http://127.0.0.1:8000, with interactive docs at http://127.0.0.1
 
 > These are the packages the app needs to run. `requirements.txt` also lists development and testing tools. Some of them are large (`torch`, `transformers`), and `uvloop` doesn't install on Windows.
 
-### 3. Start the frontend (React + Vite)
+### 3. Start the frontend (React + Vite), connected to the backend
 In a second terminal:
 ```bash
 cd React
 npm install
-npm run dev
+# Windows (PowerShell): $env:VITE_USE_BACKEND="true"; npm run dev
+VITE_USE_BACKEND=true npm run dev
 ```
 Open http://localhost:5173/gptitor/.
 
-The frontend talks to the API address set in [`React/src/config.ts`](React/src/config.ts) (`http://127.0.0.1:8000` by default).
+With `VITE_USE_BACKEND=true` the frontend talks to the API address set in [`React/src/config.ts`](React/src/config.ts) (`http://127.0.0.1:8000` by default).
 
 ### Docker Compose (alternative)
 With Docker installed, run this from the repository root:
@@ -110,6 +124,12 @@ With Docker installed, run this from the repository root:
 docker-compose up --build
 ```
 The backend is exposed on port 8000 and the frontend on port 5173. Stop it with `docker-compose down`.
+
+## Deploying to GitHub Pages
+
+[`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) runs the frontend tests, builds the static site and publishes it on every push to `main`.
+
+To set it up on your own fork: open **Settings → Pages** on GitHub and set **Source** to **GitHub Actions**. The next push to `main` (or a manual run from the **Actions** tab) deploys the site to `https://<your-username>.github.io/<repository-name>/`.
 
 ## Running the tests
 ```bash
@@ -132,6 +152,7 @@ API/                FastAPI backend
   Data/             tasks and categories loaded on first start
 React/              React + TypeScript frontend (Vite)
   src/              components, styles (design tokens in index.css), hooks
+  src/localApi/     in-browser copy of the API used by the static build
 Media/features/     GIFs used in this README
 ```
 

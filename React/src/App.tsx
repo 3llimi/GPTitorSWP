@@ -32,11 +32,8 @@ export interface Query {
   llm_id?: number | null;
 }
 
-const addHoursToDate = (date: Date, hours: number): Date => {
-  const newDate = new Date(date.getTime());
-  newDate.setHours(newDate.getHours() + hours);
-  return newDate;
-};
+/* The API returns local time as "YYYY-MM-DD HH:MM:SS". */
+const parseApiDate = (value: string): Date => new Date(value.replace(' ', 'T'));
 
 /* Re-mounts the page on navigation so it fades in. */
 const Page: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -44,7 +41,8 @@ const Page: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <div key={pathname} className='page'>{children}</div>;
 };
 
-const App: React.FC = () => {
+/* basename: the path the app is served from, e.g. "/GPTitorSWP" on GitHub Pages. */
+const App: React.FC<{ basename?: string }> = ({ basename = '/gptitor' }) => {
 
   const { setFeedback, setCriteria } = useContext(FeedbackContext);
   const [convId, setConvId] = useState(1);
@@ -100,7 +98,7 @@ const App: React.FC = () => {
         display_id: item.conversation_id,
         stored_id: item.conversation_id,
         text: item.title,
-        date: addHoursToDate(new Date(item.created_at.replace(" ", "T")), 3),
+        date: parseApiDate(item.created_at),
         llm_id: item.llm_id,
         isMarked: !!savedMarks[item.conversation_id],
       })));
@@ -174,7 +172,7 @@ const App: React.FC = () => {
       display_id: nextId,
       stored_id: data.conversation_id,
       text: `Untitled`,
-      date: addHoursToDate(new Date(data.created_at.replace(' ', 'T')), 3),
+      date: parseApiDate(data.created_at),
       llm_id: llmId,
       isMarked: false,
     };
@@ -280,7 +278,7 @@ const App: React.FC = () => {
 
   return (
     <SendContextProvider>
-      <Router basename='/gptitor'>
+      <Router basename={basename}>
         <div className='app-shell'>
           <NavBar onStartTour={() => { setMenuOpen(false); setRunTutorial(true); }} onToggleMenu={() => setMenuOpen(o => !o)} />
           <div className='app-body'>

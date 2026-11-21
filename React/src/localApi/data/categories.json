@@ -1,0 +1,46 @@
+[
+  {
+    "category_name": "Mathematics and Logic",
+    "category_description": "Tasks that involve mathematical concepts, calculations, and problem-solving to challenge and enhance mathematical skills."
+  },
+  {
+    "category_name": "Education and Skills Development",
+    "category_description": "Tasks focused on learning, academic pursuits, and the development of essential skills for personal and professional growth."
+  },
+  {
+    "category_name": "Health and Well-being",
+    "category_description": "Tasks that promote physical and mental health, well-being, and healthy living practices."
+  },
+  {
+    "category_name": "Home and Lifestyle Management",
+    "category_description": "Tasks related to managing and improving home environments, lifestyle choices, and everyday activities."
+  },
+  {
+    "category_name": "Financial Management and Planning",
+    "category_description": "Tasks that involve financial planning, budgeting, investments, and real estate transactions."
+  },
+  {
+    "category_name": "Travel and Leisure",
+    "category_description": "Tasks focused on planning and enjoying travel experiences, discovering hobbies, and engaging in leisure activities."
+  },
+  {
+    "category_name": "Work and Professional Development",
+    "category_description": "Tasks aimed at professional growth, effective communication, and project management within a business environment."
+  },
+  {
+    "category_name": "Technology and Innovation",
+    "category_description": "Tasks related to evaluating, choosing, and understanding technological gadgets and innovations."
+  },
+  {
+    "category_name": "Creative and Artistic Expression",
+    "category_description": "Tasks that stimulate creativity and artistic skills through various forms of art and imaginative projects."
+  },
+  {
+    "category_name": "Environmental Awareness",
+    "category_description": "Tasks aimed at promoting eco-friendly practices and reducing environmental impact."
+  },
+  {
+    "category_name": "Relationships and Social Life",
+    "category_description": "Tasks designed to enhance interpersonal relationships, social interactions, and family life."
+  }
+]
